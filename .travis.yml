@@ -1,0 +1,23 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t doliveros/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true doliveros/react-test npm test -- --coverage
+
+after_success:
+
+  - docker build -t doliveros/multi-client ./client 
+  - docker build -t doliveros/multi-nginx ./nginx
+  - docker build -t doliveros/multi-server ./server
+  - docker build -t doliveros/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push doliveros/multi-client
+  - docker push doliveros/multi-nginx
+  - docker push doliveros/multi-server
+  - docker push doliveros/multi-worker
